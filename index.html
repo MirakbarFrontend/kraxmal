@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="uz">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Kraxmal Hisobi</title>
+		<style>
+			:root {
+				--main-bg: #f0f4f8;
+				--card-bg: #ffffff;
+				--primary: #4caf50;
+				--danger: #e53935;
+				--text: #333;
+				--soft-gray: #888;
+			}
+
+			* {
+				box-sizing: border-box;
+			}
+
+			body {
+				font-family: 'Segoe UI', sans-serif;
+				background-color: var(--main-bg);
+				padding: 20px;
+				margin: 0;
+				color: var(--text);
+			}
+
+			h1,
+			h2 {
+				text-align: center;
+				margin-top: 0;
+				color: var(--primary);
+			}
+
+			.container {
+				background: var(--card-bg);
+				border-radius: 16px;
+				box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+				padding: 20px;
+				margin: 20px auto;
+				max-width: 600px;
+				transition: 0.3s ease;
+			}
+
+			label {
+				font-weight: 500;
+				margin-top: 10px;
+			}
+
+			input,
+			button {
+				width: 100%;
+				padding: 12px;
+				margin: 8px 0 16px;
+				font-size: 1rem;
+				border-radius: 10px;
+				border: 1px solid #ccc;
+				transition: 0.3s;
+			}
+
+			input:focus {
+				border-color: var(--primary);
+				outline: none;
+			}
+
+			button {
+				background-color: var(--primary);
+				color: #fff;
+				border: none;
+				font-weight: bold;
+				cursor: pointer;
+			}
+
+			button:hover {
+				background-color: #43a047;
+			}
+
+			.table-wrapper {
+				overflow-x: auto;
+			}
+
+			table {
+				width: 100%;
+				border-collapse: collapse;
+				margin-top: 10px;
+			}
+
+			th,
+			td {
+				border: 1px solid #ddd;
+				padding: 10px;
+				text-align: center;
+				font-size: 0.95rem;
+			}
+
+			th {
+				background-color: #f1f1f1;
+			}
+
+			.small-btn {
+				background-color: var(--danger);
+				color: white;
+				border: none;
+				padding: 6px 10px;
+				border-radius: 6px;
+				cursor: pointer;
+				font-size: 0.85rem;
+			}
+
+			.info {
+				text-align: center;
+				font-weight: 500;
+				font-size: 1.05rem;
+				margin-top: 20px;
+				color: var(--soft-gray);
+			}
+
+			@media (max-width: 600px) {
+				body {
+					padding: 10px;
+				}
+				.container {
+					padding: 15px;
+					margin: 10px;
+				}
+				table,
+				th,
+				td {
+					font-size: 0.85rem;
+				}
+				input,
+				button {
+					padding: 10px;
+					font-size: 0.95rem;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<h1>🌾 Kraxmal Hisobi</h1>
+
+		<div class="container">
+			<h2>➕ Yangi kirim</h2>
+			<label for="dateInput">Sana:</label>
+			<input type="date" id="dateInput" />
+			<label for="tonsInput">Necha tonna olindi:</label>
+			<input type="number" id="tonsInput" placeholder="Masalan: 3.5" step="0.01" />
+			<button onclick="addStarch()">Qo‘shish</button>
+		</div>
+
+		<div class="container">
+			<h2>📋 Kraxmal Ro‘yxati</h2>
+			<div class="table-wrapper">
+				<table>
+					<thead>
+						<tr>
+							<th>Sana</th>
+							<th>Miqdor (tonna)</th>
+							<th>Narx ($)</th>
+							<th>❌</th>
+						</tr>
+					</thead>
+					<tbody id="starchTable"></tbody>
+				</table>
+			</div>
+			<div class="info" id="summaryInfo"></div>
+		</div>
+
+		<script>
+			const STARCH_KEY = 'kraxmal_records';
+			const PRICE_PER_TON = 580;
+
+			let records = JSON.parse(localStorage.getItem(STARCH_KEY)) || [];
+
+			function addStarch() {
+				const date = document.getElementById('dateInput').value;
+				const tons = parseFloat(document.getElementById('tonsInput').value);
+				if (!date || isNaN(tons) || tons <= 0) {
+					alert('Sana va to‘g‘ri tonna kiriting!');
+					return;
+				}
+
+				records.push({ date, tons });
+				localStorage.setItem(STARCH_KEY, JSON.stringify(records));
+				document.getElementById('dateInput').value = '';
+				document.getElementById('tonsInput').value = '';
+				renderTable();
+			}
+
+			function deleteEntry(index) {
+				if (confirm('Bu yozuvni o‘chirmoqchimisiz?')) {
+					records.splice(index, 1);
+					localStorage.setItem(STARCH_KEY, JSON.stringify(records));
+					renderTable();
+				}
+			}
+
+			function renderTable() {
+				const table = document.getElementById('starchTable');
+				const summary = document.getElementById('summaryInfo');
+				table.innerHTML = '';
+				let totalTons = 0;
+
+				records.forEach((r, index) => {
+					const row = document.createElement('tr');
+					const cost = (r.tons * PRICE_PER_TON).toFixed(2);
+					row.innerHTML = `
+          <td>${r.date}</td>
+          <td>${r.tons}</td>
+          <td>$${cost}</td>
+          <td><button class="small-btn" onclick="deleteEntry(${index})">O‘chirish</button></td>
+        `;
+					table.appendChild(row);
+					totalTons += r.tons;
+				});
+
+				const totalCost = (totalTons * PRICE_PER_TON).toFixed(2);
+				let status = '';
+				if (totalTons < 10) status = `⛔️ Hali ${(10 - totalTons).toFixed(2)} tonna kerak`;
+				else if (totalTons > 13) status = `✅ Maqsaddan oshdi`;
+				else status = `✅ Maqsadga yetildi`;
+
+				summary.innerHTML = `
+        Jami kraxmal: <b>${totalTons.toFixed(2)} tonna</b><br>
+        Umumiy narx: <b>$${totalCost}</b><br>
+        ${status} (oylik me'yor: 10–13 tonna)
+      `;
+			}
+
+			renderTable();
+		</script>
+	</body>
+</html>
